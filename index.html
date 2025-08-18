@@ -3,34 +3,130 @@
 <head>
   <meta charset="UTF-8">
   <title>Control de Producción</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f8f8f8; }
-    h1 { text-align: center; }
-    .card { background: white; padding: 15px; margin: 10px 0; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    input, button { padding: 8px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; }
-    button { cursor: pointer; background: #007bff; color: white; border: none; }
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 0; 
+      padding: 0; 
+      background: #f8f8f8; 
+    }
+
+    header {
+      background: #007bff;
+      color: white;
+      padding: 15px;
+      text-align: center;
+    }
+
+    .container {
+      padding: 15px;
+      max-width: 800px;
+      margin: auto;
+    }
+
+    .card { 
+      background: white; 
+      padding: 15px; 
+      margin: 10px 0; 
+      border-radius: 10px; 
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+    }
+
+    label { 
+      display: block; 
+      margin-top: 10px; 
+      font-weight: bold; 
+    }
+
+    input, button { 
+      width: 100%; 
+      padding: 10px; 
+      margin: 8px 0; 
+      border-radius: 5px; 
+      border: 1px solid #ccc; 
+      font-size: 16px;
+    }
+
+    button { 
+      cursor: pointer; 
+      background: #007bff; 
+      color: white; 
+      border: none; 
+      font-weight: bold;
+    }
+
     button:hover { background: #0056b3; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { padding: 8px; border: 1px solid #ddd; text-align: center; }
+
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      margin-top: 10px; 
+    }
+
+    th, td { 
+      padding: 10px; 
+      border: 1px solid #ddd; 
+      text-align: center; 
+      font-size: 14px;
+    }
+
+    /* 📱 Responsive: en pantallas chicas la tabla se convierte en tarjetas */
+    @media (max-width: 600px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+
+      thead tr {
+        display: none;
+      }
+
+      tr {
+        margin-bottom: 15px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 10px;
+      }
+
+      td {
+        text-align: left;
+        padding-left: 50%;
+        position: relative;
+      }
+
+      td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 10px;
+        font-weight: bold;
+      }
+    }
   </style>
 </head>
 <body>
 
+<header>
   <h1>📊 Control de Producción</h1>
+</header>
 
+<div class="container">
   <div class="card">
     <h3>➕ Agregar Producción</h3>
     <label>Kilos de milanesas:</label>
-    <input type="number" id="kilos" placeholder="Ej: 10"><br>
+    <input type="number" id="kilos" placeholder="Ej: 10">
     <label>Cajones de pollos:</label>
-    <input type="number" id="cajones" placeholder="Ej: 2"><br>
+    <input type="number" id="cajones" placeholder="Ej: 2">
     <button onclick="agregar()">Agregar</button>
   </div>
 
   <div class="card">
     <h3>📅 Producción registrada</h3>
     <table id="tabla">
-      <tr><th>Fecha</th><th>Kilos</th><th>Cajones</th><th>Total $</th><th>Acciones</th></tr>
+      <thead>
+        <tr><th>Fecha</th><th>Kilos</th><th>Cajones</th><th>Total $</th><th>Acciones</th></tr>
+      </thead>
+      <tbody></tbody>
     </table>
   </div>
 
@@ -39,11 +135,11 @@
     <button onclick="calcularSueldo()">Calcular hasta hoy</button>
     <p id="resultado"></p>
   </div>
+</div>
 
 <script>
   const PRECIO_KILO = 300;
   const PRECIO_CAJON = 1500;
-
   let produccion = JSON.parse(localStorage.getItem("produccion")) || [];
 
   function guardar() {
@@ -51,19 +147,19 @@
   }
 
   function mostrar() {
-    let tabla = document.getElementById("tabla");
-    tabla.innerHTML = "<tr><th>Fecha</th><th>Kilos</th><th>Cajones</th><th>Total $</th><th>Acciones</th></tr>";
+    let tbody = document.querySelector("#tabla tbody");
+    tbody.innerHTML = "";
     produccion.forEach((item, index) => {
       let fila = `<tr>
-        <td>${item.fecha}</td>
-        <td>${item.kilos}</td>
-        <td>${item.cajones}</td>
-        <td>$${item.total}</td>
-        <td>
+        <td data-label="Fecha">${item.fecha}</td>
+        <td data-label="Kilos">${item.kilos}</td>
+        <td data-label="Cajones">${item.cajones}</td>
+        <td data-label="Total">$${item.total}</td>
+        <td data-label="Acciones">
           <button onclick="eliminar(${index})">❌</button>
         </td>
       </tr>`;
-      tabla.innerHTML += fila;
+      tbody.innerHTML += fila;
     });
   }
 
