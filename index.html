@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Control de Producción</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f8f8f8; }
+    h1 { text-align: center; }
+    .card { background: white; padding: 15px; margin: 10px 0; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    input, button { padding: 8px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; }
+    button { cursor: pointer; background: #007bff; color: white; border: none; }
+    button:hover { background: #0056b3; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 8px; border: 1px solid #ddd; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <h1>📊 Control de Producción</h1>
+
+  <div class="card">
+    <h3>➕ Agregar Producción</h3>
+    <label>Kilos de milanesas:</label>
+    <input type="number" id="kilos" placeholder="Ej: 10"><br>
+    <label>Cajones de pollos:</label>
+    <input type="number" id="cajones" placeholder="Ej: 2"><br>
+    <button onclick="agregar()">Agregar</button>
+  </div>
+
+  <div class="card">
+    <h3>📅 Producción registrada</h3>
+    <table id="tabla">
+      <tr><th>Fecha</th><th>Kilos</th><th>Cajones</th><th>Total $</th><th>Acciones</th></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>💰 Calcular sueldo</h3>
+    <button onclick="calcularSueldo()">Calcular hasta hoy</button>
+    <p id="resultado"></p>
+  </div>
+
+<script>
+  const PRECIO_KILO = 300;
+  const PRECIO_CAJON = 1500;
+
+  let produccion = JSON.parse(localStorage.getItem("produccion")) || [];
+
+  function guardar() {
+    localStorage.setItem("produccion", JSON.stringify(produccion));
+  }
+
+  function mostrar() {
+    let tabla = document.getElementById("tabla");
+    tabla.innerHTML = "<tr><th>Fecha</th><th>Kilos</th><th>Cajones</th><th>Total $</th><th>Acciones</th></tr>";
+    produccion.forEach((item, index) => {
+      let fila = `<tr>
+        <td>${item.fecha}</td>
+        <td>${item.kilos}</td>
+        <td>${item.cajones}</td>
+        <td>$${item.total}</td>
+        <td>
+          <button onclick="eliminar(${index})">❌</button>
+        </td>
+      </tr>`;
+      tabla.innerHTML += fila;
+    });
+  }
+
+  function agregar() {
+    let kilos = parseInt(document.getElementById("kilos").value) || 0;
+    let cajones = parseInt(document.getElementById("cajones").value) || 0;
+    let fecha = new Date().toLocaleDateString();
+    let total = (kilos * PRECIO_KILO) + (cajones * PRECIO_CAJON);
+    produccion.push({ fecha, kilos, cajones, total });
+    guardar();
+    mostrar();
+    document.getElementById("kilos").value = "";
+    document.getElementById("cajones").value = "";
+  }
+
+  function eliminar(i) {
+    produccion.splice(i, 1);
+    guardar();
+    mostrar();
+  }
+
+  function calcularSueldo() {
+    let suma = produccion.reduce((acc, item) => acc + item.total, 0);
+    document.getElementById("resultado").innerText = "Total acumulado: $" + suma;
+  }
+
+  mostrar();
+</script>
+
+</body>
+</html>
