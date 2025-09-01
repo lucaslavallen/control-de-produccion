@@ -17,20 +17,13 @@
       padding: 0; 
       background: #f8f8f8; 
     }
-
     header {
       background: #007bff;
       color: white;
       padding: 15px;
       text-align: center;
     }
-
-    .container {
-      padding: 15px;
-      max-width: 800px;
-      margin: auto;
-    }
-
+    .container { padding: 15px; max-width: 800px; margin: auto; }
     .card { 
       background: white; 
       padding: 15px; 
@@ -38,75 +31,20 @@
       border-radius: 10px; 
       box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
     }
-
-    label { 
-      display: block; 
-      margin-top: 10px; 
-      font-weight: bold; 
-    }
-
+    label { display: block; margin-top: 10px; font-weight: bold; }
     input, button { 
-      width: 100%; 
-      padding: 10px; 
-      margin: 8px 0; 
-      border-radius: 5px; 
-      border: 1px solid #ccc; 
-      font-size: 16px;
+      width: 100%; padding: 10px; margin: 8px 0; border-radius: 5px; border: 1px solid #ccc; font-size: 16px;
     }
-
-    button { 
-      cursor: pointer; 
-      background: #007bff; 
-      color: white; 
-      border: none; 
-      font-weight: bold;
-    }
-
+    button { cursor: pointer; background: #007bff; color: white; border: none; font-weight: bold; }
     button:hover { background: #0056b3; }
-
-    table { 
-      width: 100%; 
-      border-collapse: collapse; 
-      margin-top: 10px; 
-    }
-
-    th, td { 
-      padding: 10px; 
-      border: 1px solid #ddd; 
-      text-align: center; 
-      font-size: 14px;
-    }
-
-    /* 📱 Responsive: en pantallas chicas la tabla se convierte en tarjetas */
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 10px; border: 1px solid #ddd; text-align: center; font-size: 14px; }
     @media (max-width: 600px) {
-      table, thead, tbody, th, td, tr {
-        display: block;
-      }
-
-      thead tr {
-        display: none;
-      }
-
-      tr {
-        margin-bottom: 15px;
-        background: #fff;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        padding: 10px;
-      }
-
-      td {
-        text-align: left;
-        padding-left: 50%;
-        position: relative;
-      }
-
-      td::before {
-        content: attr(data-label);
-        position: absolute;
-        left: 10px;
-        font-weight: bold;
-      }
+      table, thead, tbody, th, td, tr { display: block; }
+      thead tr { display: none; }
+      tr { margin-bottom: 15px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 10px; }
+      td { text-align: left; padding-left: 50%; position: relative; }
+      td::before { content: attr(data-label); position: absolute; left: 10px; font-weight: bold; }
     }
   </style>
 </head>
@@ -145,110 +83,102 @@
 </div>
 
 <script>
-  // Configuración de Supabase (CAMBIAR ESTOS DATOS)
+  // 🔹 Configuración Supabase (editar con tus datos)
   const SUPABASE_URL = "https://rkkynjxswjksikfsopla.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJra3luanhzd2prc2lrZnNvcGxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjkwNzAsImV4cCI6MjA3MjM0NTA3MH0.9bZAzSwOpClV_HEF1rBFmjtQtBA06Jh-NSgUkIucUNY";
+  const SUPABASE_ANON_KEY = "TU_API_KEY_COMPLETA";
   const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const PRECIO_KILO = 300;
-  const PRECIO_CAJON = 1500;d
+  const PRECIO_CAJON = 1500;
 
-  // Agregar producción
+  // 🔹 Función para mostrar tabla
+  async function mostrar() {
+    try {
+      const { data, error } = await client
+        .from("produccion")
+        .select("*")
+        .order("id", { ascending: false });
+
+      if (error) throw error;
+
+      const tbody = document.querySelector("#tabla tbody");
+      tbody.innerHTML = "";
+
+      data.forEach(item => {
+        let fila = `<tr>
+          <td data-label="Fecha">${item.fecha}</td>
+          <td data-label="Kilos">${item.kilos}</td>
+          <td data-label="Cajones">${item.cajones}</td>
+          <td data-label="Total">$${item.total}</td>
+          <td data-label="Acciones">
+            <button onclick="eliminar(${item.id})">❌</button>
+          </td>
+        </tr>`;
+        tbody.innerHTML += fila;
+      });
+    } catch (err) {
+      console.error("Error mostrando datos:", err);
+    }
+  }
+
+  // 🔹 Agregar registro
   async function agregar() {
     let kilos = parseInt(document.getElementById("kilos").value) || 0;
     let cajones = parseInt(document.getElementById("cajones").value) || 0;
     let fecha = new Date().toISOString().split("T")[0];
-    let total = (kilos * PRECIO_KILO) + (cajones * PRECIO_CAJON);
+    let total = kilos * PRECIO_KILO + cajones * PRECIO_CAJON;
 
-    let { error } = await client
-      .from("produccion")
-      .insert([{ fecha, kilos, cajones, total }]);
-
-    if (error) {
-      console.error(error);
-      alert("❌ Error guardando en la base");
-    } else {
-      mostrar();
+    try {
+      const { error } = await client.from("produccion").insert([{ fecha, kilos, cajones, total }]);
+      if (error) throw error;
       document.getElementById("kilos").value = "";
       document.getElementById("cajones").value = "";
+      mostrar(); // refresca la tabla inmediatamente
+    } catch (err) {
+      console.error("Error agregando registro:", err);
+      alert("❌ No se pudo agregar el registro.");
     }
   }
 
-  // Mostrar producción
-  async function mostrar() {
-    let { data, error } = await client
-      .from("produccion")
-      .select("*")
-      .order("id", { ascending: false });
-
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    let tbody = document.querySelector("#tabla tbody");
-    tbody.innerHTML = "";
-    data.forEach((item) => {
-      let fila = `<tr>
-        <td data-label="Fecha">${item.fecha}</td>
-        <td data-label="Kilos">${item.kilos}</td>
-        <td data-label="Cajones">${item.cajones}</td>
-        <td data-label="Total">$${item.total}</td>
-        <td data-label="Acciones">
-          <button onclick="eliminar(${item.id})">❌</button>
-        </td>
-      </tr>`;
-      tbody.innerHTML += fila;
-    });
-  }
-
-  // Eliminar producción
+  // 🔹 Eliminar registro
   async function eliminar(id) {
-    let { error } = await client
-      .from("produccion")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      console.error(error);
-    } else {
-      mostrar();
+    try {
+      const { error } = await client.from("produccion").delete().eq("id", id);
+      if (error) throw error;
+      mostrar(); // refresca la tabla
+    } catch (err) {
+      console.error("Error eliminando registro:", err);
     }
   }
 
-  // Calcular sueldo total
+  // 🔹 Calcular sueldo total
   async function calcularSueldo() {
-    let { data, error } = await client
-      .from("produccion")
-      .select("total");
-
-    if (error) {
-      console.error(error);
-      return;
+    try {
+      const { data, error } = await client.from("produccion").select("total");
+      if (error) throw error;
+      let suma = data.reduce((acc, item) => acc + item.total, 0);
+      document.getElementById("resultado").innerText = "Total acumulado: $" + suma;
+    } catch (err) {
+      console.error("Error calculando sueldo:", err);
     }
-
-    let suma = data.reduce((acc, item) => acc + item.total, 0);
-    document.getElementById("resultado").innerText =
-      "Total acumulado: $" + suma;
   }
 
-  // Exportar a Excel
+  // 🔹 Exportar Excel
   async function exportarExcel() {
-    let { data, error } = await client
-      .from("produccion")
-      .select("*");
+    try {
+      const { data, error } = await client.from("produccion").select("*");
+      if (error) throw error;
 
-    if (error) {
-      console.error(error);
-      return;
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Producción");
+      XLSX.writeFile(wb, "produccion.xlsx");
+    } catch (err) {
+      console.error("Error exportando Excel:", err);
     }
-
-    let ws = XLSX.utils.json_to_sheet(data);
-    let wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Producción");
-    XLSX.writeFile(wb, "produccion.xlsx");
   }
 
+  // 🔹 Cargar tabla al iniciar
   mostrar();
 </script>
 
