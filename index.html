@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <title>Control de Producción</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- SheetJS para exportar Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
   <style>
     body { 
       font-family: Arial, sans-serif; 
@@ -128,6 +134,7 @@
       </thead>
       <tbody></tbody>
     </table>
+    <button onclick="exportarExcel()">📥 Exportar Excel</button>
   </div>
 
   <div class="card">
@@ -138,52 +145,108 @@
 </div>
 
 <script>
-  const PRECIO_KILO = 300;
-  const PRECIO_CAJON = 1500;
-  let produccion = JSON.parse(localStorage.getItem("produccion")) || [];
+  // Configuración de Supabase (CAMBIAR ESTOS DATOS)
+  const SUPABASE_URL = "https://rkkynjxswjksikfsopla.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJra3luanhzd2prc2lrZnNvcGxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjkwNzAsImV4cCI6MjA3MjM0NTA3MH0.9bZAzSwOpClV_HEF1rBFmjtQtBA06Jh-NSgUkIucUNY";
+  const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  function guardar() {
-    localStorage.setItem("produccion", JSON.stringify(produccion));
+  const PRECIO_KILO = 300;
+  const PRECIO_CAJON = 1500;d
+
+  // Agregar producción
+  async function agregar() {
+    let kilos = parseInt(document.getElementById("kilos").value) || 0;
+    let cajones = parseInt(document.getElementById("cajones").value) || 0;
+    let fecha = new Date().toISOString().split("T")[0];
+    let total = (kilos * PRECIO_KILO) + (cajones * PRECIO_CAJON);
+
+    let { error } = await client
+      .from("produccion")
+      .insert([{ fecha, kilos, cajones, total }]);
+
+    if (error) {
+      console.error(error);
+      alert("❌ Error guardando en la base");
+    } else {
+      mostrar();
+      document.getElementById("kilos").value = "";
+      document.getElementById("cajones").value = "";
+    }
   }
 
-  function mostrar() {
+  // Mostrar producción
+  async function mostrar() {
+    let { data, error } = await client
+      .from("produccion")
+      .select("*")
+      .order("id", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
     let tbody = document.querySelector("#tabla tbody");
     tbody.innerHTML = "";
-    produccion.forEach((item, index) => {
+    data.forEach((item) => {
       let fila = `<tr>
         <td data-label="Fecha">${item.fecha}</td>
         <td data-label="Kilos">${item.kilos}</td>
         <td data-label="Cajones">${item.cajones}</td>
         <td data-label="Total">$${item.total}</td>
         <td data-label="Acciones">
-          <button onclick="eliminar(${index})">❌</button>
+          <button onclick="eliminar(${item.id})">❌</button>
         </td>
       </tr>`;
       tbody.innerHTML += fila;
     });
   }
 
-  function agregar() {
-    let kilos = parseInt(document.getElementById("kilos").value) || 0;
-    let cajones = parseInt(document.getElementById("cajones").value) || 0;
-    let fecha = new Date().toLocaleDateString();
-    let total = (kilos * PRECIO_KILO) + (cajones * PRECIO_CAJON);
-    produccion.push({ fecha, kilos, cajones, total });
-    guardar();
-    mostrar();
-    document.getElementById("kilos").value = "";
-    document.getElementById("cajones").value = "";
+  // Eliminar producción
+  async function eliminar(id) {
+    let { error } = await client
+      .from("produccion")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error(error);
+    } else {
+      mostrar();
+    }
   }
 
-  function eliminar(i) {
-    produccion.splice(i, 1);
-    guardar();
-    mostrar();
+  // Calcular sueldo total
+  async function calcularSueldo() {
+    let { data, error } = await client
+      .from("produccion")
+      .select("total");
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    let suma = data.reduce((acc, item) => acc + item.total, 0);
+    document.getElementById("resultado").innerText =
+      "Total acumulado: $" + suma;
   }
 
-  function calcularSueldo() {
-    let suma = produccion.reduce((acc, item) => acc + item.total, 0);
-    document.getElementById("resultado").innerText = "Total acumulado: $" + suma;
+  // Exportar a Excel
+  async function exportarExcel() {
+    let { data, error } = await client
+      .from("produccion")
+      .select("*");
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    let ws = XLSX.utils.json_to_sheet(data);
+    let wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Producción");
+    XLSX.writeFile(wb, "produccion.xlsx");
   }
 
   mostrar();
