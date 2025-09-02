@@ -33,6 +33,12 @@
       td { text-align: left; padding-left: 50%; position: relative; }
       td::before { content: attr(data-label); position: absolute; left: 10px; font-weight: bold; }
     }
+    /* Oculta la columna Total $ */
+#tabla th:nth-child(4),
+#tabla td:nth-child(4) {
+  display: none;
+}
+
   </style>
 </head>
 <body>
@@ -51,8 +57,11 @@
     <button onclick="agregar()">Agregar</button>
   </div>
 
+
+  
   <div class="card">
     <h3>📅 Producción registrada</h3>
+    <button onclick="toggleTotales()">Mostrar/Ocultar Total</button>
     <table id="tabla">
       <thead>
         <tr><th>Fecha</th><th>Kilos</th><th>Cajones</th><th>Total $</th><th>Acciones</th></tr>
@@ -194,6 +203,26 @@
   // 🔹 Cargar tabla al iniciar
   mostrar();
 </script>
+<!-- fucnio js -->
+ <script>
+ let totalesOcultos = true; // Por defecto ocultos
+
+function toggleTotales() {
+  totalesOcultos = !totalesOcultos;
+  const tabla = document.getElementById("tabla");
+
+  // Header: columna Total $ (índice 3)
+  const th = tabla.querySelectorAll("thead th")[3];
+  th.style.display = totalesOcultos ? "none" : "table-cell";
+
+  // Filas: columna Total $ (índice 3)
+  const filas = tabla.querySelectorAll("tbody tr");
+  filas.forEach(fila => {
+    fila.children[3].style.display = totalesOcultos ? "none" : "table-cell";
+  });
+}
+</script>
+ <!-- end fucions -->
 
 </body>
 </html>
