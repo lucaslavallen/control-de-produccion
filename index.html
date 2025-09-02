@@ -17,24 +17,11 @@
       padding: 0; 
       background: #f8f8f8; 
     }
-    header {
-      background: #007bff;
-      color: white;
-      padding: 15px;
-      text-align: center;
-    }
+    header { background: #007bff; color: white; padding: 15px; text-align: center; }
     .container { padding: 15px; max-width: 800px; margin: auto; }
-    .card { 
-      background: white; 
-      padding: 15px; 
-      margin: 10px 0; 
-      border-radius: 10px; 
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
-    }
+    .card { background: white; padding: 15px; margin: 10px 0; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     label { display: block; margin-top: 10px; font-weight: bold; }
-    input, button { 
-      width: 100%; padding: 10px; margin: 8px 0; border-radius: 5px; border: 1px solid #ccc; font-size: 16px;
-    }
+    input, button { width: 100%; padding: 10px; margin: 8px 0; border-radius: 5px; border: 1px solid #ccc; font-size: 16px; }
     button { cursor: pointer; background: #007bff; color: white; border: none; font-weight: bold; }
     button:hover { background: #0056b3; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -91,7 +78,7 @@
   const PRECIO_KILO = 300;
   const PRECIO_CAJON = 1500;
 
-  // 🔹 Función para mostrar tabla
+  // 🔹 Mostrar producción
   async function mostrar() {
     try {
       const { data, error } = await client
@@ -106,11 +93,12 @@
 
       data.forEach(item => {
         let fila = `<tr>
-          <td data-label="Fecha">${item.fecha}</td>
+          <td data-label="Fecha" id="fecha-${item.id}">${item.fecha}</td>
           <td data-label="Kilos">${item.kilos}</td>
           <td data-label="Cajones">${item.cajones}</td>
           <td data-label="Total">$${item.total}</td>
           <td data-label="Acciones">
+            <button onclick="editarFecha(${item.id}, '${item.fecha}')">✏️</button>
             <button onclick="eliminar(${item.id})">❌</button>
           </td>
         </tr>`;
@@ -145,10 +133,36 @@
     try {
       const { error } = await client.from("produccion").delete().eq("id", id);
       if (error) throw error;
-      mostrar(); // refresca la tabla
+      mostrar();
     } catch (err) {
       console.error("Error eliminando registro:", err);
     }
+  }
+
+  // 🔹 Editar fecha
+  function editarFecha(id, fechaActual) {
+    const td = document.getElementById(`fecha-${id}`);
+    td.innerHTML = `
+      <input type="date" id="input-fecha-${id}" value="${fechaActual}">
+      <button onclick="guardarFecha(${id})">💾</button>
+      <button onclick="cancelarEdicion(${id}, '${fechaActual}')">❌</button>
+    `;
+  }
+
+  async function guardarFecha(id) {
+    const nuevaFecha = document.getElementById(`input-fecha-${id}`).value;
+    try {
+      const { error } = await client.from("produccion").update({ fecha: nuevaFecha }).eq("id", id);
+      if (error) throw error;
+      mostrar();
+    } catch (err) {
+      console.error("Error actualizando fecha:", err);
+    }
+  }
+
+  function cancelarEdicion(id, fechaOriginal) {
+    const td = document.getElementById(`fecha-${id}`);
+    td.innerText = fechaOriginal;
   }
 
   // 🔹 Calcular sueldo total
@@ -168,7 +182,6 @@
     try {
       const { data, error } = await client.from("produccion").select("*");
       if (error) throw error;
-
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Producción");
